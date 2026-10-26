@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodDelivery Predictor</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="navbar">
+    <a class="brand" href="/">
+        <span>🍔</span> FoodDelivery <b>Predictor</b>
+    </a>
+    <nav>
+        <a href="#predict">Predict</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#about">About</a>
+    </nav>
+</header>
+
+<main class="page" id="predict">
+
+    <section class="form-card">
+        <div class="section-heading">
+            <h1>Order details</h1>
+            <p>Fill in the order information and get an instant delivery time estimate.</p>
+        </div>
+
+        <form method="POST" class="prediction-form">
+
+            {% for feature in features %}
+
+            <div class="field
+                {% if feature == 'Distance_km' %}distance-field
+                {% elif feature == 'Preparation_Time_min' %}preparation-field
+                {% elif feature == 'Weather' %}weather-field
+                {% elif feature == 'Traffic_Level' %}traffic-field
+                {% elif feature == 'Time_of_Day' %}time-field
+                {% elif feature == 'Vehicle_Type' %}vehicle-field
+                {% elif feature == 'Courier_Experience_yrs' %}experience-field
+                {% endif %}">
+
+                <label for="{{ feature }}">
+                    {% if feature == 'Distance_km' %}
+                        📍 Distance (km)
+                    {% elif feature == 'Preparation_Time_min' %}
+                        🍳 Preparation time (min)
+                    {% elif feature == 'Weather' %}
+                        🌤️ Weather
+                    {% elif feature == 'Traffic_Level' %}
+                        🚦 Traffic level
+                    {% elif feature == 'Time_of_Day' %}
+                        🕒 Time of day
+                    {% elif feature == 'Vehicle_Type' %}
+                        🚗 Vehicle type
+                    {% elif feature == 'Courier_Experience_yrs' %}
+                        👤 Courier experience (years)
+                    {% else %}
+                        {{ feature.replace('_', ' ') }}
+                    {% endif %}
+                </label>
+
+                {% if feature in dropdown_options %}
+
+                    <div class="choice-group">
+
+                        {% for option in dropdown_options[feature] %}
+
+                        <label class="choice">
+                            <input
+                                type="radio"
+                                name="{{ feature }}"
+                                value="{{ option }}"
+                                {% if input_values.get(feature, '') == option %}
+                                    checked
+                                {% endif %}
+                                required
+                            >
+                            <span class="choice-button">
+
+                                {% if feature == 'Weather' %}
+                                    {% if option == 'Clear' %}☀️
+                                    {% elif option == 'Rainy' %}🌧️
+                                    {% elif option == 'Foggy' %}🌫️
+                                    {% elif option == 'Cloudy' %}☁️
+                                    {% elif option == 'Snowy' %}❄️
+                                    {% elif option == 'Windy' %}💨
+                                    {% else %}🌤️
+                                    {% endif %}
+                                {% elif feature == 'Traffic_Level' %}
+                                    {% if option == 'Low' %}🟢
+                                    {% elif option == 'Medium' %}🟡
+                                    {% else %}🔴
+                                    {% endif %}
+                                {% elif feature == 'Time_of_Day' %}
+                                    {% if option == 'Morning' %}🌅
+                                    {% elif option == 'Afternoon' %}☀️
+                                    {% elif option == 'Evening' %}🌇
+                                    {% else %}🌙
+                                    {% endif %}
+                                {% elif feature == 'Vehicle_Type' %}
+                                    {% if option == 'Bike' %}🚲
+                                    {% elif option == 'Scooter' %}🛵
+                                    {% elif option == 'Car' %}🚗
+                                    {% endif %}
+                                {% endif %}
+
+                                {{ option }}
+                            </span>
+                        </label>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% else %}
+
+                    <div class="input-wrap">
+                        <input
+                            type="number"
+                            id="{{ feature }}"
+                            name="{{ feature }}"
+                            value="{{ input_values.get(feature, '') }}"
+                            placeholder="Enter {{ feature.replace('_', ' ') }}"
+                            min="0"
+                            step="any"
+                            required
+                        >
+
+                        {% if feature == 'Distance_km' %}
+                            <span class="unit">km</span>
+                        {% elif feature == 'Preparation_Time_min' %}
+                            <span class="unit">min</span>
+                        {% elif feature == 'Courier_Experience_yrs' %}
+                            <span class="unit">yrs</span>
+                        {% endif %}
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+            {% endfor %}
+
+            <button type="submit" class="predict-button">
+                <span>⚡</span> Predict Delivery Time
+            </button>
+
+        </form>
+    </section>
+
+    <aside class="result-card">
+
+        <span class="preview-badge">
+            {% if prediction is not none %}
+                Prediction result
+            {% else %}
+                Sample preview
+            {% endif %}
+        </span>
+
+        <h2>Estimated delivery time</h2>
+
+        <div class="progress-circle">
+            <div class="circle-inner">
+                {% if prediction is not none %}
+                    <strong>{{ prediction }}</strong>
+                {% else %}
+                    <strong>--</strong>
+                {% endif %}
+                <span>minutes</span>
+            </div>
+        </div>
+
+        <div class="summary-chips">
+            {% if input_values.get('Distance_km') %}
+                <span>📍 {{ input_values.get('Distance_km') }} km</span>
+            {% else %}
+                <span>📍 Distance</span>
+            {% endif %}
+
+            {% if input_values.get('Traffic_Level') %}
+                <span>🚦 {{ input_values.get('Traffic_Level') }}</span>
+            {% else %}
+                <span>🚦 Traffic</span>
+            {% endif %}
+
+            {% if input_values.get('Weather') %}
+                <span>🌤️ {{ input_values.get('Weather') }}</span>
+            {% else %}
+                <span>🌤️ Weather</span>
+            {% endif %}
+        </div>
+
+        {% if error %}
+            <div class="result-error">
+                <strong>Prediction error</strong>
+                <p>{{ error }}</p>
+            </div>
+        {% else %}
+            <div class="tip-box">
+                <strong>💡 Tip:</strong>
+                Higher traffic and longer distances can increase delivery time.
+                Change the inputs to see how the estimate changes.
+            </div>
+        {% endif %}
+
+        {% if prediction is not none %}
+            <div class="success-note">
+                ✓ Prediction generated using your trained ML model.
+            </div>
+        {% endif %}
+
+    </aside>
+
+</main>
+
+<section class="info-section" id="how-it-works">
+    <h2>How it works</h2>
+    <p>Enter the delivery details, select the available options, and click Predict Delivery Time. Your trained machine-learning model estimates the delivery duration.</p>
+</section>
+
+<footer id="about">
+    FoodDelivery Predictor · Machine Learning Project
+</footer>
+
+</body>
+</html>
